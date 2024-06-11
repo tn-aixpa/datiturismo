@@ -18,3 +18,5 @@ vodafone_aree_df = mlrun.get_dataitem("s3://datalake/projects/overtourism/artifa
 vodafone_attendences_df = mlrun.get_dataitem("s3://datalake/projects/overtourism/artifacts/vodafone_attendences.parquet.parquet").as_df()
 vodafone_attendences_STR_df = mlrun.get_dataitem("s3://datalake/projects/overtourism/artifacts/vodafone_attendences_STR.parquet.parquet").as_df()
 
+movimento_turistico_molveno_df = mlrun.get_dataitem("s3://datalake/projects/overtourism/artifacts/movimento_turistico_molveno.parquet.parquet").as_df()
+
