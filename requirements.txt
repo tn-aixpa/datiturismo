@@ -2,3 +2,4 @@ minio
 pandas
 folium
 mlrun
+s3fs
