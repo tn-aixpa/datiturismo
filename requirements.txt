@@ -6,3 +6,4 @@ mlrun
 s3fs
 evidently
 pyrosm
+contextily
