@@ -1,6 +1,8 @@
 minio
 pandas
-folium
+geopandas
+mapclassify
 mlrun
 s3fs
 evidently
+pyrosm
