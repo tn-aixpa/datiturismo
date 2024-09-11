@@ -85,9 +85,12 @@ if selected == "Home":
         xl = configuration['x']['label']
         yl = configuration['y']['label']
         chart_data.rename(columns={'x': xl, 'y': yl, 'label': 'Vincolo'}, inplace=True)
+
+        bound = c[configuration['x']['id']] + c[configuration['y']['id']]
+        
         fig = px.line(chart_data, x=xl, y=yl, color="Vincolo")
-        fig.update_xaxes(zeroline=True, zerolinewidth=1, zerolinecolor='grey')
-        fig.update_yaxes(zeroline=True, zerolinewidth=1, zerolinecolor='grey', minallowed=0)
+        fig.update_xaxes(zeroline=True, zerolinewidth=1, zerolinecolor='grey', range=[0, bound])
+        fig.update_yaxes(zeroline=True, zerolinewidth=1, zerolinecolor='grey', range=[0, bound])
         st.plotly_chart(fig, use_container_width=True)
 
         c_plot.subheader("Legenda")
