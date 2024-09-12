@@ -21,7 +21,7 @@
                 },
                 {
                     "id": "T",
-                    "label": "Scal turisti",
+                    "label": "Scala turisti",
                     "min": 0,
                     "max": 10000,
                     "value": 5000,
@@ -176,6 +176,7 @@
         },
         {
             "id": "transportation",
+            "fy": "(c['h_cap']*c['h_occ'] - c['h_EP']*y)/(c['h_TP'] if c['h_TP'] > 0 else 0.01)",
             "label": "Trasporto",
             "parameters": [
                 {
@@ -226,6 +227,53 @@
                     "fx": "(c['t_cap'] - c['t_TT']/c['t_TC']*x)*c['t_EC']/(c['t_ET'] if c['t_ET'] > 0 else 0.01)",
                     "fy": "(c['t_cap'] - c['t_ET']/c['t_EC']*y)*c['t_TC']/(c['t_TT'] if c['t_TT'] > 0 else 0.01)",
                     "description": "Capienza di sottosistema di trasporto. Si calcola usando seguenti parametri:\n- ```t_cap``` - numero massimo di auto \n - ```t_TT``` - rata di turisti che entrano / lasciano la zona \n - ```t_ET``` - rata di escursionisti che entrano / lasciano la zona \n - ```t_TC``` - numero turisti per auto\n - ```t_EC``` - numero escursionisti per auto\n\n in questo modo:\n```\n\n t_ET / t_EC * E + t_TT / t_TC * T < t_cap\n```"
+                }
+            ]
+        },
+        {
+            "id": "restaurants",
+            "label": "Ristorazione",
+            "parameters": [
+                {
+                    "id": "r_str",
+                    "label": "Numero strutture (ristoranti e bar con ristorazione)",
+                    "min": 0,
+                    "max": 100,
+                    "value": 30,
+                    "step": 1
+                },
+                {
+                    "id": "r_pasti",
+                    "label": "Numero di pasti per servizio per struttura",
+                    "min": 10,
+                    "max": 200,
+                    "value": 125,
+                    "step": 5
+                },
+                {
+                    "id": "r_pT",
+                    "label": "Percentuale di turisti che usano un ristorante",
+                    "min": 0.0,
+                    "max": 1.0,
+                    "value": 0.4,
+                    "step": 0.05
+                },
+                {
+                    "id": "r_pE",
+                    "label": "Percentuale di escurisonisti che usano un ristorante",
+                    "min": 0.0,
+                    "max": 1.0,
+                    "value": 0.1,
+                    "step": 0.05
+                }
+            ],
+            "constraints": [
+                {
+                    "id": "r_avail",
+                    "label": "Ristoranti",
+                    "fx": "(c['r_str']*c['r_pasti'] - c['r_pT']*x)/(c['r_pE'] if c['r_pE'] > 0 else 0.01)",
+                    "fy": "(c['r_str']*c['r_pasti'] - c['r_pE']*y)/(c['r_pT'] if c['r_pT'] > 0 else 0.01)",
+                    "description": "Capienza di sottosistema di ristorazione. Si calcola usando seguenti parametri:\n- ```r_str``` - numero strutture (ristoranti e bar con ristorazione) \n - ```r_pasti``` - numero di pasti per servizio per struttura \n - ```r_pT``` - percentuale di turisti che usano un ristorante\n- ```r_pE``` - percentuale di escursionisti che usano un ristorante\n\n in questo modo:\n```\n\n r_pE * E + r_pT * T < r_str * r_pasti\n```"
                 }
             ]
         }
