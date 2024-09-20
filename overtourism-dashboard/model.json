@@ -80,9 +80,8 @@
                 {
                     "id": "p_avail",
                     "label": "Parcheggi",
-                    "fx": "(c['p_cap'] - c['p_TP']/c['p_TC']*x)*c['p_EC']/(c['p_EP'] if c['p_EP'] > 0 else 0.01)",
-                    "fy": "(c['p_cap'] - c['p_EP']/c['p_EC']*y)*c['p_TC']/(c['p_TP'] if c['p_TP'] > 0 else 0.01)",
-                    "description": "Capienza di sottosistema di parcheggi. Si calcola usando seguenti parametri:\n- ```p_cap``` - numero di posti auto disponibili \n - ```p_TP``` - rata di utilizzo dai turisti\n - ```p_EP``` - rata di utilizzo da escursionisti\n - ```p_TC``` - numero turisti per auto\n - ```p_EC``` - numero escursionisti per auto\n\n in questo modo:\n```\n\n p_EP / p_EC * E + p_TP / p_TC * T < p_cap\n```"
+                    "description": "Capienza di sottosistema di parcheggi. Si calcola usando seguenti parametri:\n- ```p_cap``` - numero di posti auto disponibili \n - ```p_TP``` - rata di utilizzo dai turisti\n - ```p_EP``` - rata di utilizzo da escursionisti\n - ```p_TC``` - numero turisti per auto\n - ```p_EC``` - numero escursionisti per auto\n\n in questo modo:\n```\n\n p_EP / p_EC * E + p_TP / p_TC * T < p_cap\n```",
+                    "r": ["c['p_TP']/c['p_TC']", "c['p_EP']/c['p_EC']", "c['p_cap']"]
                 }
             ]
         },
@@ -120,9 +119,8 @@
                 {
                     "id": "b_avail",
                     "label": "Spiaggia",
-                    "fx": "(c['b_cap'] - c['b_TP']*x)/(c['b_EP'] if c['b_EP'] > 0 else 0.01)",
-                    "fy": "(c['b_cap'] - c['b_EP']*y)/(c['b_TP'] if c['b_TP'] > 0 else 0.01)",
-                    "description": "Capienza di sottosistema di spiaggia. Si calcola usando seguenti parametri:\n- ```b_cap``` - numero massimo di persone \n - ```b_TP``` - rata di utilizzo dai turisti\n - ```b_EP``` - rata di utilizzo da escursionisti\n\n in questo modo:\n```\n\n b_EP * E + b_TP * T < b_cap\n```"
+                    "description": "Capienza di sottosistema di spiaggia. Si calcola usando seguenti parametri:\n- ```b_cap``` - numero massimo di persone \n - ```b_TP``` - rata di utilizzo dai turisti\n - ```b_EP``` - rata di utilizzo da escursionisti\n\n in questo modo:\n```\n\n b_EP * E + b_TP * T < b_cap\n```",
+                    "r": ["c['b_TP']", "c['b_EP']", "c['b_cap']"]
                 }
             ]
         },
@@ -168,9 +166,8 @@
                 {
                     "id": "h_avail",
                     "label": "Esercizi Ricettivi",
-                    "fx": "(c['h_cap']*c['h_occ'] - c['h_TP']*x)/(c['h_EP'] if c['h_EP'] > 0 else 0.01)",
-                    "fy": "(c['h_cap']*c['h_occ'] - c['h_EP']*y)/(c['h_TP'] if c['h_TP'] > 0 else 0.01)",
-                    "description": "Capienza di sottosistema alberghiera. Si calcola usando seguenti parametri:\n- ```h_cap``` - numero posti letto\n- ```h_occ``` - rata di occupazione dei posti letto \n - ```h_TP``` - rata di utilizzo dai turisti\n - ```h_EP``` - rata di utilizzo da escursionisti (pari a zero!)\n\n in questo modo:\n```\n\n h_TP * T < h_cap * h_occ\n```"
+                    "description": "Capienza di sottosistema alberghiera. Si calcola usando seguenti parametri:\n- ```h_cap``` - numero posti letto\n- ```h_occ``` - rata di occupazione dei posti letto \n - ```h_TP``` - rata di utilizzo dai turisti\n - ```h_EP``` - rata di utilizzo da escursionisti (pari a zero!)\n\n in questo modo:\n```\n\n h_TP * T < h_cap * h_occ\n```",
+                    "r": ["c['h_TP']", "c['h_EP']", "c['h_cap']*c['h_occ']"]
                 }
             ]
         },
@@ -224,9 +221,8 @@
                 {
                     "id": "t_avail",
                     "label": "Traffico",
-                    "fx": "(c['t_cap'] - c['t_TT']/c['t_TC']*x)*c['t_EC']/(c['t_ET'] if c['t_ET'] > 0 else 0.01)",
-                    "fy": "(c['t_cap'] - c['t_ET']/c['t_EC']*y)*c['t_TC']/(c['t_TT'] if c['t_TT'] > 0 else 0.01)",
-                    "description": "Capienza di sottosistema di trasporto. Si calcola usando seguenti parametri:\n- ```t_cap``` - numero massimo di auto \n - ```t_TT``` - rata di turisti che entrano / lasciano la zona \n - ```t_ET``` - rata di escursionisti che entrano / lasciano la zona \n - ```t_TC``` - numero turisti per auto\n - ```t_EC``` - numero escursionisti per auto\n\n in questo modo:\n```\n\n t_ET / t_EC * E + t_TT / t_TC * T < t_cap\n```"
+                    "description": "Capienza di sottosistema di trasporto. Si calcola usando seguenti parametri:\n- ```t_cap``` - numero massimo di auto \n - ```t_TT``` - rata di turisti che entrano / lasciano la zona \n - ```t_ET``` - rata di escursionisti che entrano / lasciano la zona \n - ```t_TC``` - numero turisti per auto\n - ```t_EC``` - numero escursionisti per auto\n\n in questo modo:\n```\n\n t_ET / t_EC * E + t_TT / t_TC * T < t_cap\n```",
+                    "r": ["c['t_TT']/c['t_TC']", "c['t_ET']/c['t_EC']", "c['t_cap']"]
                 }
             ]
         },
@@ -271,9 +267,8 @@
                 {
                     "id": "r_avail",
                     "label": "Ristorazione",
-                    "fx": "(c['r_str']*c['r_pasti'] - c['r_pT']*x)/(c['r_pE'] if c['r_pE'] > 0 else 0.01)",
-                    "fy": "(c['r_str']*c['r_pasti'] - c['r_pE']*y)/(c['r_pT'] if c['r_pT'] > 0 else 0.01)",
-                    "description": "Capienza di sottosistema di ristorazione. Si calcola usando seguenti parametri:\n- ```r_str``` - numero strutture (ristoranti e bar con ristorazione) \n - ```r_pasti``` - numero di pasti per servizio per struttura \n - ```r_pT``` - percentuale di turisti che usano un ristorante\n- ```r_pE``` - percentuale di escursionisti che usano un ristorante\n\n in questo modo:\n```\n\n r_pE * E + r_pT * T < r_str * r_pasti\n```"
+                    "description": "Capienza di sottosistema di ristorazione. Si calcola usando seguenti parametri:\n- ```r_str``` - numero strutture (ristoranti e bar con ristorazione) \n - ```r_pasti``` - numero di pasti per servizio per struttura \n - ```r_pT``` - percentuale di turisti che usano un ristorante\n- ```r_pE``` - percentuale di escursionisti che usano un ristorante\n\n in questo modo:\n```\n\n r_pE * E + r_pT * T < r_str * r_pasti\n```",
+                    "r": ["c['r_pT']", "c['r_pE']", "c['r_str']*c['r_pasti']"]
                 }
             ]
         }
