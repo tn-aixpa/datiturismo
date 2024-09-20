@@ -22,6 +22,9 @@ movimento_turistico_molveno_df = mlrun.get_dataitem("s3://datalake/projects/over
 dati_pioggia_df = mlrun.get_dataitem("s3://datalake/projects/overtourism/artifacts/dati_pioggia.parquet.parquet").as_df()
 
 depuratore_df = mlrun.get_dataitem("s3://datalake/projects/overtourism/artifacts/depuratore.parquet.parquet").as_df()
+parcheggi_posti_molveno_df = mlrun.get_dataitem("s3://datalake/projects/overtourism/artifacts/parcheggi_posti.parquet.parquet").as_df()
+ristoranti_spiaggia_df = mlrun.get_dataitem("s3://datalake/projects/overtourism/artifacts/ristoranti_spiaggia.parquet.parquet").as_df()
+
 # tgp_card data
 
 
