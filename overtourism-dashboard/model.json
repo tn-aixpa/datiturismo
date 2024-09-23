@@ -272,5 +272,31 @@
                 }
             ]
         }
+    ],
+    "actions": [
+        {
+            "id": "inc_parkings",
+            "label": "Aumenta parcheggi",
+            "multiple": true,
+            "impact": [
+                {
+                    "parameter": "p_cap",
+                    "value": 100,
+                    "label": "Numero parcheggi aggiunti"
+                }
+            ]
+        },
+        {
+            "id": "parking_reservation",
+            "label": "Parcheggi su prenotazione",
+            "multiple": false,
+            "impact": [
+                {
+                    "parameter": "p_EP",
+                    "value": -0.2,
+                    "label": "Deminuzione presenza escursionisti"
+                }
+            ]
+        }
     ]
 }
