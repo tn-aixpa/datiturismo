@@ -179,7 +179,10 @@ if selected == "Home":
                                  fill='tozeroy', showlegend=False, fillcolor='lightgrey', line_color='rgba(0,0,0,0)'))
 
         if 'show_points' in st.session_state and st.session_state['show_points'] == True:             
-            fig.add_trace(go.Scatter(name="presenze", x=presenze['value_x'], y=presenze['value_y'],  mode='markers', showlegend=False, text=presenze['date']))
+            fig.add_trace(go.Scatter(name="presenze",
+                                     x=presenze['value_x']*st.session_state['p_T'],
+                                     y=presenze['value_y']*st.session_state['p_E'],
+                                     mode='markers', showlegend=False, text=presenze['date']))
         
         fig.update_xaxes(zeroline=True, zerolinewidth=1, zerolinecolor='grey', range=[0, bound])
         fig.update_yaxes(zeroline=True, zerolinewidth=1, zerolinecolor='grey', range=[0, bound])

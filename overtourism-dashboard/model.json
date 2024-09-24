@@ -8,7 +8,7 @@
         "label": "Escursionisti"        
     },
     "visualization": {
-            "id": "global",
+            "id": "vistualization",
             "label": "Parametri di visualizzazione",
             "parameters": [
                 {
@@ -30,7 +30,28 @@
             ]
     },
     "categories": [
-
+        {
+            "id": "global",
+            "label": "Parametri globali",
+            "parameters": [
+                {
+                    "id": "p_E",
+                    "label": "Scala escursionisti",
+                    "min": 0.0,
+                    "max": 5.0,
+                    "value": 1.0,
+                    "step": 0.1
+                },
+                {
+                    "id": "p_T",
+                    "label": "Scala turisti",
+                    "min": 0.0,
+                    "max": 5.0,
+                    "value": 1.0,
+                    "step": 0.1
+                }
+            ]
+        },
         {
             "id": "parkings",
             "label": "Parcheggi",
@@ -292,7 +313,7 @@
             "multiple": false,
             "impact": [
                 {
-                    "parameter": "p_EP",
+                    "parameter": "p_E",
                     "value": -0.2,
                     "label": "Deminuzione presenza escursionisti"
                 }
