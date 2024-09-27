@@ -2,7 +2,6 @@ minio
 pandas
 geopandas
 mapclassify
-mlrun
 s3fs
 evidently
 pyrosm
