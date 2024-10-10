@@ -1,6 +1,7 @@
-experiment_id, feature_encoding, description, pca_components, rmse, mae
-1, OneHotEncoding, considering probprec06-12_molto bassa/probtemp06-12_molto bassa/probprec12-18_molto bassa/intprec12-18_debole, 2, 663, 525
-2, OneHotEncoding, considering probprec06-12_molto bassa/probtemp06-12_molto bassa/probprec12-18_molto bassa/intprec12-18_debole, 4, 677, 545
-3, Frequency Encoding, considering correlated meteo features probprec06-12/probtemp06-12, 2, 636, 477
-4, Frequency Encoding, considering correlated meteo features probprec06-12/probtemp06-12, 4, 227, 195
-4, Frequency Encoding, considering correlated meteo features probprec06-12/probtemp06-12, -, 8.37e-13, 7.07e-13
+experiment_id, feature_encoding, description, pca_components, rmse, mae, r2
+1, OneHotEncoding, considering probprec06-12_molto bassa/probtemp06-12_molto bassa/probprec12-18_molto bassa/intprec12-18_debole, 2, 663, 525,
+2, OneHotEncoding, considering probprec06-12_molto bassa/probtemp06-12_molto bassa/probprec12-18_molto bassa/intprec12-18_debole, 4, 677, 545,
+3, Frequency Encoding, considering correlated meteo features probprec06-12/probtemp06-12, 2, 636, 477, 0.51
+4, Frequency Encoding, considering correlated meteo features probprec06-12/probtemp06-12, 4, 227, 195, 0.69
+5, Frequency Encoding, considering correlated meteo features probprec06-12/probtemp06-12, -, 546, 450,
+5, Frequency Encoding, applying RFE, -, 603, 404,
