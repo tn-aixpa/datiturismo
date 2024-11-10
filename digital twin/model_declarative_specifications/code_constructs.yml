@@ -1,0 +1,5 @@
+construct_types:
+  - presence_variable
+  - capacity_index
+  - constraint
+
