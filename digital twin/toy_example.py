@@ -7,6 +7,9 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 
 
+########## CONTEXT VARIABLES ##########
+
+
 class ContextVariable:
     def __init__(self, name, values, distribution=None):
         self._name = name
@@ -33,7 +36,11 @@ CV_weather = ContextVariable('weather', ['molto bassa', 'bassa', 'media', 'alta'
                              {'media': 0.075, 'molto bassa': 0.65, 'bassa': 0.2, 'alta': 0.075})
 
 
+########## PRESENCE VARIABLES ##########
+
+
 class PresenceVariable:
+    #TODO: replace stats with distribution?
     def __init__(self, cvs: list[ContextVariable], stats):
         self.cvs = cvs
         self.stats = stats
@@ -151,41 +158,86 @@ PV_tourists = PresenceVariable([CV_weekday, CV_weather], tourist_presences_stats
 PV_excursionists = PresenceVariable([CV_weekday, CV_weather], excursionist_presences_stats)
 
 
-class Constraint:
-    def __init__(self, a, b, sigma):
-        self.a = a
-        self.b = b
-        self.sigma = sigma
+########## PROBABILITY FIELDS ##########
 
-    def plot_line(self, x0, y0, x1, y1, delta):
-        # @TODO: manage cases where x0 > x1 and/or y0 > y1
-        delta_x = delta / (math.sqrt(1 + self.b ** 2))
-        delta_y = delta_x * self.b
-        r = math.ceil(abs((x1 - x0) / delta_x))
-        xs = [x0 + delta_x * i for i in range(r) if y0 <= self.a + self.b * x0 + delta_y * i <= y1]
-        ys = [self.a + self.b * x0 + delta_y * i for i in range(r) if y0 <= self.a + self.b * x0 + delta_y * i <= y1]
-        return xs, ys
 
-    def probability(self, x, y):
-        dist = (self.b * x - y + self.a) / np.sqrt((self.b ** 2 + 1))
-        prob = norm.cdf(dist, scale=self.sigma)
+#TODO: not sure this is the right approach... SymPy? Other?
+class GeoPlane:
+    def __init__(self, params):
+        self._params = params
+
+    def plot(self, ax, **params):
+        a = self._params[0]
+        b = self._params[1]
+        ax.plot([0, 1/a], [1/b, 0], **params)
+
+
+class ProbabilityField:
+    #TODO: check if dims is of any use...
+    def __init__(self, dims: int):
+        self._dims = dims
+
+    def probability(self, coordinates: list[float]) -> float:
+        pass
+
+    def median(self):
+        pass
+
+
+class PlanarGaussianProbabilityField(ProbabilityField):
+    def __init__(self, params, sigma):
+        super().__init__(len(params))
+        self._params = params
+        self._size = math.sqrt(np.dot(params, params))
+        self._sigma = sigma
+
+    def probability(self, coordinates):
+        #TODO: optimize / manage np
+        coordinates_array = np.array(coordinates)
+        coordinates_array = np.rollaxis(coordinates_array, 0, coordinates_array.ndim)
+        dist = (1 - np.dot(coordinates_array, self._params)) / self._size
+        prob = norm.cdf(dist, scale=self._sigma)
         return prob
 
+    def median(self):
+        return GeoPlane(self._params)
 
-c1 = Constraint(5000, -0.4, 800)
-c2 = Constraint(16000, -3.0, 300)
-c3 = Constraint(12000, -3.0, 300)
 
-[x1, y1] = c1.plot_line(0, 0, 10000, 10000, 10)
-[x2, y2] = c2.plot_line(0, 0, 10000, 10000, 10)
-[x3, y3] = c3.plot_line(0, 0, 10000, 10000, 10)
+########## CONSTRAINTS ##########
 
-xx = np.linspace(0, 10000, 100)
-yy = np.linspace(0, 10000, 100)
+
+class Constraint:
+    def __init__(self, *, pvs=None, cvs=None, distribution: ProbabilityField):
+        if cvs is None:
+            cvs = []
+        if pvs is None:
+            pvs = []
+        self._pvs = pvs
+        self._cvs = cvs
+        self._distribution = distribution
+
+    def median(self):
+        return self._distribution.median()
+
+    def probability(self, pv_values: list[float]):
+        return self._distribution.probability(pv_values)
+
+
+c1 = Constraint(distribution=PlanarGaussianProbabilityField([1/12000, 1/5000], sigma=800))
+c2 = Constraint(distribution=PlanarGaussianProbabilityField([1/6000, 1/14000], sigma=400))
+c3 = Constraint(distribution=PlanarGaussianProbabilityField([1/4000, 1/12000], sigma=400))
+
+
+########## RENDERING ##########
+
+(x_max, y_max) = (10000, 10000)
+
+xx = np.linspace(0, x_max, 100)
+yy = np.linspace(0, y_max, 100)
 xx, yy = np.meshgrid(xx, yy)
-zz1 = c1.probability(xx, yy)
-zz2 = c2.probability(xx, yy)
-zz3 = c3.probability(xx, yy)
+zz1 = c1.probability([xx, yy])
+zz2 = c2.probability([xx, yy])
+zz3 = c3.probability([xx, yy])
 
 zzA = zz1 * zz2
 zzB = zz1 * zz3
@@ -198,15 +250,22 @@ sample_tourists_bad = PV_tourists.sample(cvs=bad, nr=100)
 sample_excursionists_bad = PV_excursionists.sample(cvs=bad, nr=100)
 
 fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 5))
-axA.plot(x1, y1, color='red')
-axA.plot(x2, y2, color='red')
+
+c1.median().plot(axA, color='red')
+c2.median().plot(axA, color='red')
 axA.contourf(xx, yy, zzA, levels=20)
 axA.scatter(sample_excursionists_all, sample_tourists_all)
 axA.set_title(f'Area = {zzA.sum():.2f}')
-axB.plot(x1, y1, color='red')
-axB.plot(x3, y3, color='red')
+axA.set_xlim(left=0, right=x_max)
+axA.set_ylim(bottom=0, top=y_max)
+
+c1.median().plot(axB, color='red')
+c3.median().plot(axB, color='red')
 axB.contourf(xx, yy, zzB, levels=20)
 axB.scatter(sample_excursionists_bad, sample_tourists_bad)
 axB.set_title(f'Area = {zzB.sum():.2f}')
+axB.set_xlim(left=0, right=x_max)
+axB.set_ylim(bottom=0, top=y_max)
+
 fig.colorbar(mappable=ScalarMappable(Normalize(0, 1)), ax=[axA, axB])
 fig.show()
