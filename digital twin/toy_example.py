@@ -156,7 +156,7 @@ C_parking = Constraint(pvs=[PV_tourists, PV_excursionists],
 # ENSEMBLE SIMULATION
 
 # TODO: make configurable; may it be a CV parameter?
-cv_ensemble_size = 20
+cv_ensemble_size = 30
 
 
 class Ensemble:
@@ -191,17 +191,17 @@ class Ensemble:
         raise StopIteration
 
 
-# ANALYSIS SCENARIOS
+# ANALYSIS SITUATIONS
 
-# Base scenario
+# Base situation
 
 S_Base = {}
 
-# Good weather
+# Good situation
 
 S_Good_Weather = { CV_weather: ['molto bassa'] }
 
-# Bad weather
+# Bad situation
 
 S_Bad_Weather = { CV_weather: ['alta'] }
 
@@ -209,8 +209,8 @@ S_Bad_Weather = { CV_weather: ['alta'] }
 
 (x_max, y_max) = (10000, 10000)
 
-def plot_scenario(ax, scenario, title):
-    ensemble = Ensemble([CV_weekday, CV_weather], scenario)
+def plot_scenario(ax, situation, title):
+    ensemble = Ensemble([CV_weekday, CV_weather], situation)
     xx = np.linspace(0, x_max, 100)
     yy = np.linspace(0, y_max, 100)
     xx, yy = np.meshgrid(xx, yy)
@@ -237,7 +237,7 @@ def plot_scenario(ax, scenario, title):
     #C_accommodation.median(cvs=scenario).plot(ax, color='red')
     #C_parking.median(cvs=scenario).plot(ax, color='red')
     ax.contourf(xx, yy, zz, levels=20, cmap='coolwarm_r')
-    ax.scatter(sample_excursionists, sample_tourists, color='limegreen')
+    ax.scatter(sample_excursionists, sample_tourists, color='gainsboro', edgecolors='black')
     ax.set_title(f'{title} - Area = {area:.2f}')
     ax.set_xlim(left=0, right=x_max)
     ax.set_ylim(bottom=0, top=y_max)
