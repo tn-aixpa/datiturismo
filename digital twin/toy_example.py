@@ -40,7 +40,7 @@ CV_weather = ContextVariable('weather', ['molto bassa', 'bassa', 'media', 'alta'
 
 
 class PresenceVariable:
-    #TODO: replace stats with distribution?
+    # TODO: replace stats with distribution?
     def __init__(self, cvs: list[ContextVariable], stats):
         self.cvs = cvs
         self.stats = stats
@@ -161,7 +161,7 @@ PV_excursionists = PresenceVariable([CV_weekday, CV_weather], excursionist_prese
 ########## PROBABILITY FIELDS ##########
 
 
-#TODO: not sure this is the right approach... SymPy? Other?
+# TODO: not sure this is the right approach... SymPy? Other?
 class GeoPlane:
     def __init__(self, params):
         self._params = params
@@ -169,75 +169,88 @@ class GeoPlane:
     def plot(self, ax, **params):
         a = self._params[0]
         b = self._params[1]
-        ax.plot([0, 1/a], [1/b, 0], **params)
+        if a == 0:
+            ax.axhline(y=1 / b, **params)
+        elif b == 0:
+            ax.axvline(x=1 / a, **params)
+        else:
+            ax.plot([0, 1 / a], [1 / b, 0], **params)
 
 
 class ProbabilityField:
-    #TODO: check if dims is of any use...
+    # TODO: check if dims is of any use...
     def __init__(self, dims: int):
         self._dims = dims
 
-    def probability(self, coordinates: list[float]) -> float:
+    def dims(self):
+        return self._dims
+
+    def probability(self, coordinates: list[float], cvs: list) -> float:
         pass
 
-    def median(self):
+    def median(self, cvs):
         pass
 
 
 class PlanarGaussianProbabilityField(ProbabilityField):
-    def __init__(self, params, sigma):
-        super().__init__(len(params))
+    def __init__(self, dims, params, sigma):
+        super().__init__(dims)
         self._params = params
-        self._size = math.sqrt(np.dot(params, params))
         self._sigma = sigma
 
-    def probability(self, coordinates):
-        #TODO: optimize / manage np
+    def probability(self, coordinates, cvs):
+        # TODO: optimize / manage np
+        params = self._params(*cvs) if cvs is not None else self._params
         coordinates_array = np.array(coordinates)
         coordinates_array = np.rollaxis(coordinates_array, 0, coordinates_array.ndim)
-        dist = (1 - np.dot(coordinates_array, self._params)) / self._size
+        dist = (1 - np.dot(coordinates_array, params)) / math.sqrt(np.dot(params, params))
         prob = norm.cdf(dist, scale=self._sigma)
         return prob
 
-    def median(self):
-        return GeoPlane(self._params)
+    def median(self, cvs):
+        params = self._params(*cvs) if cvs is not None else self._params
+        return GeoPlane(params)
 
 
 ########## CONSTRAINTS ##########
 
 
 class Constraint:
-    def __init__(self, *, pvs=None, cvs=None, distribution: ProbabilityField):
+    def __init__(self, *, pvs: list[PresenceVariable], cvs=None, distribution: ProbabilityField):
         if cvs is None:
             cvs = []
-        if pvs is None:
-            pvs = []
+        assert len(pvs) == distribution.dims()
         self._pvs = pvs
         self._cvs = cvs
         self._distribution = distribution
 
-    def median(self):
-        return self._distribution.median()
+    def median(self, cvs=None):
+        return self._distribution.median(cvs)
 
-    def probability(self, pv_values: list[float]):
-        return self._distribution.probability(pv_values)
+    def probability(self, pv_values: list[float], cvs=None):
+        return self._distribution.probability(pv_values, cvs)
 
 
-c1 = Constraint(distribution=PlanarGaussianProbabilityField([1/12000, 1/5000], sigma=800))
-c2 = Constraint(distribution=PlanarGaussianProbabilityField([1/6000, 1/14000], sigma=400))
-c3 = Constraint(distribution=PlanarGaussianProbabilityField([1/4000, 1/12000], sigma=400))
-
+C_accommodation = Constraint(pvs=[PV_tourists, PV_excursionists],
+                             distribution=PlanarGaussianProbabilityField(2, [1 / 5000, 0], sigma=400))
+C_parking = Constraint(pvs=[PV_tourists, PV_excursionists],
+                       cvs=[CV_weather],
+                       distribution=PlanarGaussianProbabilityField(2,
+                                                                   lambda w: [1 / 14000, 1 / 6000] if w != 'alta'
+                                                                        else [1 / 10000, 1 / 4000],
+                                                                   sigma=800))
 
 ########## RENDERING ##########
+
 
 (x_max, y_max) = (10000, 10000)
 
 xx = np.linspace(0, x_max, 100)
 yy = np.linspace(0, y_max, 100)
 xx, yy = np.meshgrid(xx, yy)
-zz1 = c1.probability([xx, yy])
-zz2 = c2.probability([xx, yy])
-zz3 = c3.probability([xx, yy])
+zz1 = C_accommodation.probability([xx, yy])
+zz2 = C_parking.probability([xx, yy], ['bassa'])
+zz3 = C_parking.probability([xx, yy], ['alta'])
 
 zzA = zz1 * zz2
 zzB = zz1 * zz3
@@ -251,16 +264,16 @@ sample_excursionists_bad = PV_excursionists.sample(cvs=bad, nr=100)
 
 fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 5))
 
-c1.median().plot(axA, color='red')
-c2.median().plot(axA, color='red')
+C_accommodation.median().plot(axA, color='red')
+C_parking.median(cvs=['bassa']).plot(axA, color='red')
 axA.contourf(xx, yy, zzA, levels=20)
 axA.scatter(sample_excursionists_all, sample_tourists_all)
 axA.set_title(f'Area = {zzA.sum():.2f}')
 axA.set_xlim(left=0, right=x_max)
 axA.set_ylim(bottom=0, top=y_max)
 
-c1.median().plot(axB, color='red')
-c3.median().plot(axB, color='red')
+C_accommodation.median().plot(axB, color='red')
+C_parking.median(cvs=['alta']).plot(axB, color='red')
 axB.contourf(xx, yy, zzB, levels=20)
 axB.scatter(sample_excursionists_bad, sample_tourists_bad)
 axB.set_title(f'Area = {zzB.sum():.2f}')
