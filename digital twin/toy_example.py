@@ -1,5 +1,5 @@
 import math
-from random import choices
+import random
 from scipy.stats import norm, truncnorm
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,8 +7,7 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 
 
-########## CONTEXT VARIABLES ##########
-
+# CONTEXT VARIABLES
 
 class ContextVariable:
     def __init__(self, name, values, distribution=None):
@@ -26,140 +25,31 @@ class ContextVariable:
 
     def sample(self, nr=1):
         if self._distribution:
-            return choices(self._values, weights=self._distribution, k=nr)
+            return random.choices(self._values, weights=self._distribution, k=nr)
         else:
-            return choices(self._values, k=nr)
+            return random.choices(self._values, k=nr)
 
 
-CV_weekday = ContextVariable('weekday', range(7))
-CV_weather = ContextVariable('weather', ['molto bassa', 'bassa', 'media', 'alta'],
-                             {'media': 0.075, 'molto bassa': 0.65, 'bassa': 0.2, 'alta': 0.075})
-
-
-########## PRESENCE VARIABLES ##########
-
+# PRESENCE VARIABLES
 
 class PresenceVariable:
     # TODO: replace stats with distribution?
     def __init__(self, cvs: list[ContextVariable], stats):
-        self.cvs = cvs
-        self.stats = stats
+        self._cvs = cvs
+        self._stats = stats
 
     def sample(self, cvs=None, nr=1):
         all_cvs = []
         if cvs is not None:
-            for cv in self.cvs:
+            for cv in self._cvs:
                 # TODO: simplify!
-                if cv.name() in cvs.keys():
-                    all_cvs.append(cvs[cv.name()])
-                else:
-                    all_cvs.append(None)
-        stats = self.stats(*all_cvs)
+                if cv in cvs.keys():
+                    all_cvs.append(cvs[cv])
+        stats = self._stats(*all_cvs)
         return truncnorm.rvs(-stats['mean'] / stats['std'], 10, loc=stats['mean'], scale=stats['std'], size=nr)
 
 
-def tourist_presences_stats(w=None, p=None):
-    stats_map = {(-1, '*'): {'mean': 3292.75, 'std': 1127.9532044010873},
-                 (0, '*'): {'mean': 3037.4615384615386, 'std': 1171.188258094076},
-                 (1, '*'): {'mean': 2945.230769230769, 'std': 1117.096247259396},
-                 (2, '*'): {'mean': 3031.4615384615386, 'std': 1151.6471258871368},
-                 (3, '*'): {'mean': 3136.4615384615386, 'std': 1167.2054671582473},
-                 (4, '*'): {'mean': 3361.230769230769, 'std': 994.882920569564},
-                 (5, '*'): {'mean': 3858.5, 'std': 1151.389511717172},
-                 (6, '*'): {'mean': 3635.3846153846152, 'std': 1051.836927986902},
-                 (-1, 'media'): {'mean': 3374.0, 'std': 814.3095234614416},
-                 (0, 'media'): {'mean': 3205.7307692307695, 'std': 976.5806430255634},
-                 (1, 'media'): {'mean': 3159.6153846153848, 'std': 953.7620839425122},
-                 (2, 'media'): {'mean': 3202.7307692307695, 'std': 968.3993093124825},
-                 (3, 'media'): {'mean': 2884.0, 'std': 974.9187287888266},
-                 (4, 'media'): {'mean': 3367.6153846153848, 'std': 900.0792392611492},
-                 (5, 'media'): {'mean': 3619.0, 'std': 982.878425849301},
-                 (6, 'media'): {'mean': 3504.6923076923076, 'std': 925.4841044492125},
-                 (-1, 'molto bassa'): {'mean': 3897.4615384615386, 'std': 1067.3545326935837},
-                 (0, 'molto bassa'): {'mean': 4197.2, 'std': 531.3583536559861},
-                 (1, 'molto bassa'): {'mean': 2849.0, 'std': 1111.0871552973092},
-                 (2, 'molto bassa'): {'mean': 1768.0, 'std': 1108.7000405335853},
-                 (3, 'molto bassa'): {'mean': 4418.0, 'std': 788.4484764396466},
-                 (4, 'molto bassa'): {'mean': 4071.2, 'std': 765.3529904560378},
-                 (5, 'molto bassa'): {'mean': 4236.6, 'std': 1349.955295556116},
-                 (6, 'molto bassa'): {'mean': 4130.333333333333, 'std': 919.204728737474},
-                 (-1, 'bassa'): {'mean': 3494.875, 'std': 1279.9593115742837},
-                 (0, 'bassa'): {'mean': 3266.1682692307695, 'std': 1224.3664960108872},
-                 (1, 'bassa'): {'mean': 3220.0528846153848, 'std': 1195.758229578351},
-                 (2, 'bassa'): {'mean': 3111.0, 'std': 620.8397538817887},
-                 (3, 'bassa'): {'mean': 1653.0, 'std': 1222.2829075993866},
-                 (4, 'bassa'): {'mean': 1827.0, 'std': 1128.4545441041175},
-                 (5, 'bassa'): {'mean': 4564.666666666667, 'std': 140.25809542886762},
-                 (6, 'bassa'): {'mean': 4563.0, 'std': 1160.3053349159973},
-                 (-1, 'alta'): {'mean': 2839.3333333333335, 'std': 401.7229559451804},
-                 (0, 'alta'): {'mean': 2670.0, 'std': 685.9250753616163},
-                 (1, 'alta'): {'mean': 3298.0, 'std': 669.8979075383895},
-                 (2, 'alta'): {'mean': 2935.397435897436, 'std': 680.1787174097348},
-                 (3, 'alta'): {'mean': 2987.897435897436, 'std': 684.7577896323534},
-                 (4, 'alta'): {'mean': 2550.0, 'std': 632.1924609409538},
-                 (5, 'alta'): {'mean': 3348.916666666667, 'std': 680.1026379093822},
-                 (6, 'alta'): {'mean': 3237.3589743589746, 'std': 650.0361835184224}}
-    if w is None:
-        w = -1
-    if p is None:
-        p = '*'
-    return stats_map[w, p]
-
-
-def excursionist_presences_stats(w=None, p=None):
-    stats_map = {(-1, '*'): {'mean': 3198.0760869565215, 'std': 1849.4465714155635},
-                 (0, '*'): {'mean': 2830.0, 'std': 2083.9047483030504},
-                 (1, '*'): {'mean': 2861.0, 'std': 2259.344189508687},
-                 (2, '*'): {'mean': 2746.230769230769, 'std': 1543.493070594863},
-                 (3, '*'): {'mean': 2810.3076923076924, 'std': 1691.1208011560157},
-                 (4, '*'): {'mean': 2940.153846153846, 'std': 1752.114714954182},
-                 (5, '*'): {'mean': 3690.5, 'std': 1471.7294771275576},
-                 (6, '*'): {'mean': 4470.461538461538, 'std': 1752.059388994592},
-                 (-1, 'media'): {'mean': 2647.0, 'std': 1876.980820360187},
-                 (0, 'media'): {'mean': 2738.5, 'std': 1977.7384164803868},
-                 (1, 'media'): {'mean': 2754.0, 'std': 2059.307094704439},
-                 (2, 'media'): {'mean': 2696.6153846153848, 'std': 1702.0889782456761},
-                 (3, 'media'): {'mean': 1223.0, 'std': 1781.628835835903},
-                 (4, 'media'): {'mean': 2793.576923076923, 'std': 1813.4733841553495},
-                 (5, 'media'): {'mean': 3359.0, 'std': 2001.1121907579295},
-                 (6, 'media'): {'mean': 3558.730769230769, 'std': 1813.4447521981024},
-                 (-1, 'molto bassa'): {'mean': 4346.038461538462, 'std': 1769.3315682656935},
-                 (0, 'molto bassa'): {'mean': 4691.8, 'std': 1950.4303884014932},
-                 (1, 'molto bassa'): {'mean': 2945.5, 'std': 1906.8120865290668},
-                 (2, 'molto bassa'): {'mean': 1126.0, 'std': 1652.5589294191113},
-                 (3, 'molto bassa'): {'mean': 4809.333333333333, 'std': 1678.8878263104218},
-                 (4, 'molto bassa'): {'mean': 4475.6, 'std': 1484.8472311992234},
-                 (5, 'molto bassa'): {'mean': 4684.0, 'std': 1469.9692173647718},
-                 (6, 'molto bassa'): {'mean': 5468.0, 'std': 1604.9012430676225},
-                 (-1, 'bassa'): {'mean': 2776.875, 'std': 1316.2643500777929},
-                 (0, 'bassa'): {'mean': 2803.4375, 'std': 1656.19127190948},
-                 (1, 'bassa'): {'mean': 2818.9375, 'std': 1724.4982491164465},
-                 (2, 'bassa'): {'mean': 2672.5, 'std': 287.79245994292484},
-                 (3, 'bassa'): {'mean': 1114.0, 'std': 1491.9658247549303},
-                 (4, 'bassa'): {'mean': 1049.0, 'std': 1518.6329828305797},
-                 (5, 'bassa'): {'mean': 3376.0, 'std': 986.9240092327271},
-                 (6, 'bassa'): {'mean': 4579.0, 'std': 1518.6090059500705},
-                 (-1, 'alta'): {'mean': 1169.0, 'std': 697.5507150021423},
-                 (0, 'alta'): {'mean': 900.0, 'std': 1205.6654789680063},
-                 (1, 'alta'): {'mean': 1961.0, 'std': 1255.3912357618722},
-                 (2, 'alta'): {'mean': 1957.6153846153845, 'std': 1037.624544329161},
-                 (3, 'alta'): {'mean': 1989.6538461538462, 'std': 1086.1134949909122},
-                 (4, 'alta'): {'mean': 646.0, 'std': 1105.5265135590664},
-                 (5, 'alta'): {'mean': 2429.75, 'std': 1013.2156478559028},
-                 (6, 'alta'): {'mean': 2819.730769230769, 'std': 1105.5090589947213}}
-    if w is None:
-        w = -1
-    if p is None:
-        p = '*'
-    return stats_map[w, p]
-
-
-PV_tourists = PresenceVariable([CV_weekday, CV_weather], tourist_presences_stats)
-PV_excursionists = PresenceVariable([CV_weekday, CV_weather], excursionist_presences_stats)
-
-
-########## PROBABILITY FIELDS ##########
-
+# PROBABILITY FIELDS
 
 # TODO: not sure this is the right approach... SymPy? Other?
 class GeoPlane:
@@ -212,8 +102,7 @@ class PlanarGaussianProbabilityField(ProbabilityField):
         return GeoPlane(params)
 
 
-########## CONSTRAINTS ##########
-
+# CONSTRAINTS
 
 class Constraint:
     def __init__(self, *, pvs: list[PresenceVariable], cvs=None, distribution: ProbabilityField):
@@ -225,60 +114,137 @@ class Constraint:
         self._distribution = distribution
 
     def median(self, cvs=None):
-        return self._distribution.median(cvs)
+        cvs_list = None
+        if self._cvs:
+            cvs_list = []
+            for cv in self._cvs:
+                cvs_list.append(cvs[cv])
+        return self._distribution.median(cvs_list)
 
-    def probability(self, pv_values: list[float], cvs=None):
-        return self._distribution.probability(pv_values, cvs)
+    def probability(self, pv_values: list[float], cvs: dict = None):
+        cvs_list = None
+        if self._cvs:
+            cvs_list = []
+            for cv in self._cvs:
+                cvs_list.append(cvs[cv])
+        return self._distribution.probability(pv_values, cvs_list)
 
 
+# MODEL DEFINITION
+
+# Context variables
+CV_weekday = ContextVariable('weekday', range(7))
+CV_weather = ContextVariable('weather', ['molto bassa', 'bassa', 'media', 'alta'],
+                             {'media': 0.075, 'molto bassa': 0.65, 'bassa': 0.2, 'alta': 0.075})
+
+# Presence variables
+from toy_aux import tourist_presences_stats, excursionist_presences_stats
+PV_tourists = PresenceVariable([CV_weekday, CV_weather], tourist_presences_stats)
+PV_excursionists = PresenceVariable([CV_weekday, CV_weather], excursionist_presences_stats)
+
+# Constraints
 C_accommodation = Constraint(pvs=[PV_tourists, PV_excursionists],
                              distribution=PlanarGaussianProbabilityField(2, [1 / 5000, 0], sigma=400))
 C_parking = Constraint(pvs=[PV_tourists, PV_excursionists],
                        cvs=[CV_weather],
                        distribution=PlanarGaussianProbabilityField(2,
                                                                    lambda w: [1 / 14000, 1 / 6000] if w != 'alta'
-                                                                        else [1 / 10000, 1 / 4000],
+                                                                   else [1 / 10000, 1 / 4000],
                                                                    sigma=800))
 
-########## RENDERING ##########
 
+# ENSEMBLE SIMULATION
+
+# TODO: make configurable; may it be a CV parameter?
+cv_ensemble_size = 20
+
+
+class Ensemble:
+    def __init__(self, cvs, scenario):
+        # TODO: what if cvs is empty?
+        self._ensemble = {}
+        self._size = 1
+        for cv in cvs:
+            variants = cv.values()
+            if cv in scenario.keys():
+                variants = scenario[cv]
+            if len(variants) == 1:
+                self._ensemble[cv] = variants
+            else:
+                self._ensemble[cv] = cv.sample(cv_ensemble_size)
+                self._size *= cv_ensemble_size
+
+    def size(self):
+        return self._size
+
+    def __iter__(self):
+        self._pos = {k: 0 for k in self._ensemble.keys()}
+        self._pos[list(self._ensemble.keys())[0]] = -1
+        return self
+
+    def __next__(self):
+        for k in self._ensemble.keys():
+            self._pos[k] += 1
+            if self._pos[k] < len(self._ensemble[k]):
+                return {k: self._ensemble[k][self._pos[k]] for k in self._ensemble.keys()}
+            self._pos[k] = 0
+        raise StopIteration
+
+
+# ANALYSIS SCENARIOS
+
+# Base scenario
+
+S_Base = {}
+
+# Good weather
+
+S_Good_Weather = { CV_weather: ['molto bassa'] }
+
+# Bad weather
+
+S_Bad_Weather = { CV_weather: ['alta'] }
+
+# PLOTTING
 
 (x_max, y_max) = (10000, 10000)
 
-xx = np.linspace(0, x_max, 100)
-yy = np.linspace(0, y_max, 100)
-xx, yy = np.meshgrid(xx, yy)
-zz1 = C_accommodation.probability([xx, yy])
-zz2 = C_parking.probability([xx, yy], ['bassa'])
-zz3 = C_parking.probability([xx, yy], ['alta'])
+def plot_scenario(ax, scenario, title):
+    ensemble = Ensemble([CV_weekday, CV_weather], scenario)
+    xx = np.linspace(0, x_max, 100)
+    yy = np.linspace(0, y_max, 100)
+    xx, yy = np.meshgrid(xx, yy)
+    zz_accommodation = sum([C_accommodation.probability([xx, yy], case) for case in ensemble])
+    zz_parking = sum([C_parking.probability([xx, yy], case) for case in ensemble])
+    zz = zz_accommodation * zz_parking
 
-zzA = zz1 * zz2
-zzB = zz1 * zz3
+    target_samples = 200
+    case_number = ensemble.size()
+    samples_per_case = math.ceil(target_samples/case_number)
 
-sample_tourists_all = PV_tourists.sample(nr=100)
-sample_excursionists_all = PV_excursionists.sample(nr=100)
+    sample_tourists = [ sample for case in ensemble for sample in PV_tourists.sample(cvs=case, nr=samples_per_case)]
+    sample_excursionists = [ sample for case in ensemble for sample in PV_excursionists.sample(cvs=case, nr=samples_per_case)]
 
-bad = {CV_weather.name(): 'alta'}
-sample_tourists_bad = PV_tourists.sample(cvs=bad, nr=100)
-sample_excursionists_bad = PV_excursionists.sample(cvs=bad, nr=100)
+    if case_number*samples_per_case > target_samples:
+        sample_tourists = random.sample(sample_tourists, target_samples)
+        sample_excursionists = random.sample(sample_excursionists, target_samples)
 
-fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 5))
+    # TODO: move elsewhere, it cannot be computed this way...
+    # TODO: fix the unit (square-persons)
+    area = zz.sum()/(ensemble.size()**2)
 
-C_accommodation.median().plot(axA, color='red')
-C_parking.median(cvs=['bassa']).plot(axA, color='red')
-axA.contourf(xx, yy, zzA, levels=20)
-axA.scatter(sample_excursionists_all, sample_tourists_all)
-axA.set_title(f'Area = {zzA.sum():.2f}')
-axA.set_xlim(left=0, right=x_max)
-axA.set_ylim(bottom=0, top=y_max)
+    # TODO: re-enable median
+    #C_accommodation.median(cvs=scenario).plot(ax, color='red')
+    #C_parking.median(cvs=scenario).plot(ax, color='red')
+    ax.contourf(xx, yy, zz, levels=20, cmap='coolwarm_r')
+    ax.scatter(sample_excursionists, sample_tourists, color='limegreen')
+    ax.set_title(f'{title} - Area = {area:.2f}')
+    ax.set_xlim(left=0, right=x_max)
+    ax.set_ylim(bottom=0, top=y_max)
 
-C_accommodation.median().plot(axB, color='red')
-C_parking.median(cvs=['alta']).plot(axB, color='red')
-axB.contourf(xx, yy, zzB, levels=20)
-axB.scatter(sample_excursionists_bad, sample_tourists_bad)
-axB.set_title(f'Area = {zzB.sum():.2f}')
-axB.set_xlim(left=0, right=x_max)
-axB.set_ylim(bottom=0, top=y_max)
-
-fig.colorbar(mappable=ScalarMappable(Normalize(0, 1)), ax=[axA, axB])
+fig, axs = plt.subplots(1, 3, figsize=(16, 5))
+plot_scenario(axs[0], S_Base, 'Base')
+plot_scenario(axs[1], S_Good_Weather, 'Good weather' )
+plot_scenario(axs[2], S_Bad_Weather, 'Bad weather')
+fig.colorbar(mappable=ScalarMappable(Normalize(0, 1), cmap='coolwarm_r'), ax=axs)
 fig.show()
