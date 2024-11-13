@@ -14,8 +14,6 @@ class ContextVariable:
         self._name = name
         self._values = values
         self._distribution = distribution
-        if type(distribution) is dict:
-            self._distribution = [distribution[k] for k in values]
 
     def name(self):
         return '__CONTEXT__VARIABLE__' + self._name
@@ -23,11 +21,13 @@ class ContextVariable:
     def values(self):
         return self._values
 
-    def sample(self, nr=1):
+    def sample(self, nr=1, *, subset=None):
+        values = self._values if subset is None else subset
         if self._distribution:
-            return random.choices(self._values, weights=self._distribution, k=nr)
+            distribution = [self._distribution[v] for v in values]
+            return random.choices(values, weights=distribution, k=nr)
         else:
-            return random.choices(self._values, k=nr)
+            return random.choices(values, k=nr)
 
 
 # PRESENCE VARIABLES
@@ -130,6 +130,41 @@ class Constraint:
         return self._distribution.probability(pv_values, cvs_list)
 
 
+# ENSEMBLE SIMULATION
+
+class Ensemble:
+    def __init__(self, cvs, scenario, cv_ensemble_size=20):
+        # TODO: what if cvs is empty?
+        self._ensemble = {}
+        self._size = 1
+        for cv in cvs:
+            if cv in scenario.keys():
+                if len(scenario[cv]) == 1:
+                    self._ensemble[cv] = scenario[cv]
+                else:
+                    self._ensemble[cv] = cv.sample(cv_ensemble_size, subset=scenario[cv])
+                    self._size *= cv_ensemble_size
+            else:
+                self._ensemble[cv] = cv.sample(cv_ensemble_size)
+                self._size *= cv_ensemble_size
+
+    def size(self):
+        return self._size
+
+    def __iter__(self):
+        self._pos = {k: 0 for k in self._ensemble.keys()}
+        self._pos[list(self._ensemble.keys())[0]] = -1
+        return self
+
+    def __next__(self):
+        for k in self._ensemble.keys():
+            self._pos[k] += 1
+            if self._pos[k] < len(self._ensemble[k]):
+                return {k: self._ensemble[k][self._pos[k]] for k in self._ensemble.keys()}
+            self._pos[k] = 0
+        raise StopIteration
+
+
 # MODEL DEFINITION
 
 # Context variables
@@ -153,44 +188,6 @@ C_parking = Constraint(pvs=[PV_tourists, PV_excursionists],
                                                                    sigma=800))
 
 
-# ENSEMBLE SIMULATION
-
-# TODO: make configurable; may it be a CV parameter?
-cv_ensemble_size = 30
-
-
-class Ensemble:
-    def __init__(self, cvs, scenario):
-        # TODO: what if cvs is empty?
-        self._ensemble = {}
-        self._size = 1
-        for cv in cvs:
-            variants = cv.values()
-            if cv in scenario.keys():
-                variants = scenario[cv]
-            if len(variants) == 1:
-                self._ensemble[cv] = variants
-            else:
-                self._ensemble[cv] = cv.sample(cv_ensemble_size)
-                self._size *= cv_ensemble_size
-
-    def size(self):
-        return self._size
-
-    def __iter__(self):
-        self._pos = {k: 0 for k in self._ensemble.keys()}
-        self._pos[list(self._ensemble.keys())[0]] = -1
-        return self
-
-    def __next__(self):
-        for k in self._ensemble.keys():
-            self._pos[k] += 1
-            if self._pos[k] < len(self._ensemble[k]):
-                return {k: self._ensemble[k][self._pos[k]] for k in self._ensemble.keys()}
-            self._pos[k] = 0
-        raise StopIteration
-
-
 # ANALYSIS SITUATIONS
 
 # Base situation
@@ -199,18 +196,20 @@ S_Base = {}
 
 # Good situation
 
-S_Good_Weather = { CV_weather: ['molto bassa'] }
+S_Good_Weather = {CV_weather: ['molto bassa', 'bassa']}
 
 # Bad situation
 
-S_Bad_Weather = { CV_weather: ['alta'] }
+S_Bad_Weather = {CV_weather: ['alta']}
 
 # PLOTTING
 
 (x_max, y_max) = (10000, 10000)
+ensemble_size = 20  # TODO: make configurable; may it be a CV parameter?
+
 
 def plot_scenario(ax, situation, title):
-    ensemble = Ensemble([CV_weekday, CV_weather], situation)
+    ensemble = Ensemble([CV_weekday, CV_weather], situation, cv_ensemble_size=ensemble_size)
     xx = np.linspace(0, x_max, 100)
     yy = np.linspace(0, y_max, 100)
     xx, yy = np.meshgrid(xx, yy)
@@ -222,8 +221,8 @@ def plot_scenario(ax, situation, title):
     case_number = ensemble.size()
     samples_per_case = math.ceil(target_samples/case_number)
 
-    sample_tourists = [ sample for case in ensemble for sample in PV_tourists.sample(cvs=case, nr=samples_per_case)]
-    sample_excursionists = [ sample for case in ensemble for sample in PV_excursionists.sample(cvs=case, nr=samples_per_case)]
+    sample_tourists = [sample for case in ensemble for sample in PV_tourists.sample(cvs=case, nr=samples_per_case)]
+    sample_excursionists = [sample for case in ensemble for sample in PV_excursionists.sample(cvs=case, nr=samples_per_case)]
 
     if case_number*samples_per_case > target_samples:
         sample_tourists = random.sample(sample_tourists, target_samples)
@@ -234,17 +233,18 @@ def plot_scenario(ax, situation, title):
     area = zz.sum()/(ensemble.size()**2)
 
     # TODO: re-enable median
-    #C_accommodation.median(cvs=scenario).plot(ax, color='red')
-    #C_parking.median(cvs=scenario).plot(ax, color='red')
+    # C_accommodation.median(cvs=scenario).plot(ax, color='red')
+    # C_parking.median(cvs=scenario).plot(ax, color='red')
     ax.contourf(xx, yy, zz, levels=20, cmap='coolwarm_r')
     ax.scatter(sample_excursionists, sample_tourists, color='gainsboro', edgecolors='black')
     ax.set_title(f'{title} - Area = {area:.2f}')
     ax.set_xlim(left=0, right=x_max)
     ax.set_ylim(bottom=0, top=y_max)
 
+
 fig, axs = plt.subplots(1, 3, figsize=(16, 5))
 plot_scenario(axs[0], S_Base, 'Base')
-plot_scenario(axs[1], S_Good_Weather, 'Good weather' )
+plot_scenario(axs[1], S_Good_Weather, 'Good weather')
 plot_scenario(axs[2], S_Bad_Weather, 'Bad weather')
 fig.colorbar(mappable=ScalarMappable(Normalize(0, 1), cmap='coolwarm_r'), ax=axs)
 fig.show()
