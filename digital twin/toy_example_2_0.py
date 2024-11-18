@@ -2,6 +2,7 @@ import math
 import random
 import numbers
 from scipy import stats
+import pandas as pd
 import numpy as np
 from sympy import *
 import matplotlib.pyplot as plt
@@ -102,8 +103,32 @@ class Model:
         self._capacities = capacities
         self._constraints = constraints
 
-    # TODO: evaluate on ensemble also for p_case
     def evaluate(self, p_case, c_case):
+        c_df = pd.DataFrame(c_case)
+        c_subs = {}
+        for index in self._indexes:
+            if index.csv is None:
+                c_subs[index] = [index.value] * c_df.shape[0]
+            else:
+                args = [c_df[cv].values for cv in index.csv]
+                c_subs[index] = index.value(args)
+        probability = 1
+        for constraint in self._constraints:
+            usage = (lambdify(self._pvs + self._indexes, constraint.usage, 'numpy')
+                     (*[np.expand_dims(p_case[pv], axis=(2,3)) for pv in self._pvs],
+                      *[np.expand_dims(c_subs[index], axis=(0,1)) for index in self._indexes]))
+            capacity = constraint.capacity
+            # TODO: model type in declaration
+            if isinstance(capacity.value, numbers.Number):
+                result = (usage <= capacity.value)
+            else:
+                result = (1 - capacity.value.cdf(usage))
+            probability *= result
+        return probability.mean(axis=(2,3))
+
+
+    # TODO: to be removed in the future
+    def evaluate_single_case(self, p_case, c_case):
         c_subs = {}
         for index in self._indexes:
             if index.csv is None:
@@ -239,7 +264,7 @@ S_Base = {}
 # Good weather situation
 S_Good_Weather = {CV_weather: [Symbol('molto bassa'), Symbol('bassa')]}
 
-# Bad weathersituation
+# Bad weather situation
 S_Bad_Weather = {CV_weather: [Symbol('alta')]}
 
 # PLOTTING
@@ -255,7 +280,8 @@ def plot_scenario(ax, model, situation, title):
     xx = np.linspace(0, x_max, x_sample + 1)
     yy = np.linspace(0, y_max, y_sample + 1)
     xx, yy = np.meshgrid(xx, yy)
-    zz = sum([model.evaluate({PV_tourists: xx, PV_excursionists: yy}, case) for case in ensemble])
+    zz = model.evaluate({PV_tourists: xx, PV_excursionists: yy}, ensemble)
+    #zz = sum([model.evaluate_single_case({PV_tourists: xx, PV_excursionists: yy}, case) for case in ensemble])/ensemble.size()
 
     case_number = ensemble.size()
     samples_per_case = math.ceil(target_presence_samples/case_number)
@@ -268,18 +294,19 @@ def plot_scenario(ax, model, situation, title):
         sample_excursionists = random.sample(sample_excursionists, target_presence_samples)
 
     # TODO: move elsewhere, it cannot be computed this way...
-    # TODO: fix the unit (square-persons)
-    area = zz.sum() / (ensemble.size() ** 2)
+    area = zz.sum() * (x_max / x_sample / 1000) * (y_max / y_sample / 1000)
 
     # TODO: re-enable median
     # C_accommodation.median(cvs=scenario).plot(ax, color='red')
     # C_parking.median(cvs=scenario).plot(ax, color='red')
     ax.contourf(xx, yy, zz, levels=100, cmap='coolwarm_r')
     ax.scatter(sample_excursionists, sample_tourists, color='gainsboro', edgecolors='black')
-    ax.set_title(f'{title}\nArea = {area:.2f}', fontsize=12)
+    ax.set_title(f'{title}\nArea = {area:.2f} kp$^2$', fontsize=12)
     ax.set_xlim(left=0, right=x_max)
     ax.set_ylim(bottom=0, top=y_max)
 
+import time
+start_time = time.time()
 
 fig, axs = plt.subplots(2, 3, figsize=(18, 10))
 fig.subplots_adjust(hspace=0.3)
@@ -291,3 +318,5 @@ plot_scenario(axs[1, 1], M_MoreParking, S_Good_Weather, 'More parking - Good wea
 plot_scenario(axs[1, 2], M_MoreParking, S_Bad_Weather, 'More parking - Bad weather')
 fig.colorbar(mappable=ScalarMappable(Normalize(0, 1), cmap='coolwarm_r'), ax=axs)
 fig.show()
+
+print("--- %s seconds ---" % (time.time() - start_time))
