@@ -1,3 +1,5 @@
+from sklearn.cluster import KMeans
+from collections import Counter
 import pandas as pd
 
 class PCAConfig:
@@ -11,10 +13,58 @@ class PCAConfig:
     def get_nr_components(self):
         return self._num_components
 
+
+class Clustering:
+    def __init__(self, training_ds):
+        self._training_ds = training_ds
+        
+    def apply_standardization(self, training_ds):
+        # Standardizing data
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(training_ds)
+        return scaler, scaled_data
+    
+    def fit_model(self, n_clusters):
+        kmeans = KMeans(n_clusters=n_clusters, random_state=1, init='k-means++')
+        scaler, training_ds = apply_standardization(self._training_ds)
+        predictions = kmeans.fit_predict(training_ds) 
+        counts = Counter(kmeans.labels_)  
+        centers = pd.DataFrame(kmeans.cluster_centers_, columns=self._training_ds.columns) 
+        centers['size'] = [counts[i] for i in range(n_clusters)] 
+        print(centers.sort_values(by="size"))
+        return scaler, kmeans, predictions
+        
+    def plot_cv_clusters(self, training_ds, n_clusters, ax):
+        # fit the kmeans model
+        scaler, kmeans, predictions = fit_model(training_ds, n_clusters)
+        # plot the data according to the obtained clusters    
+        for cluster in range(n_clusters):
+            color = random.choice(list(mcolors.CSS4_COLORS.keys()))
+            ax.scatter(training_ds.iloc[predictions==cluster, 0], training_ds.iloc[predictions==cluster, 1], label=cluster, color=color)
+        # rescale centroids to their original unit
+        rescaled_centroids = scaler.inverse_transform(kmeans.cluster_centers_)
+        ax.scatter(rescaled_centroids[:, 0], rescaled_centroids[:, 1], s=250, marker='*', c='red', edgecolor='black', label='Centroids')
+        plt.xlabel('Tourists') 
+        plt.ylabel('Excursionists') 
+        ax.legend(scatterpoints=1)
+    
+    def plot_elbow_method(self, cluster_range, data_scaled, ax):
+        SSE = [] # inertia or distortion
+        for cluster in range(2,cluster_range):
+            kmeans = KMeans(n_clusters = cluster, init='k-means++')
+            kmeans.fit(data_scaled)
+            SSE.append(kmeans.inertia_)    
+        # converting the results into a dataframe and plotting them
+        frame = pd.DataFrame({'Cluster':range(2,cluster_range), 'SSE':SSE})
+        plt.figure(figsize=(12,6))
+        ax.plot(frame['Cluster'], frame['SSE'], marker='o')
+        plt.xlabel('Number of clusters')
+        plt.ylabel('Inertia')
+
         
 def data_imputation_weather(nearby_weather, target_weather):
     """
-    Filling in missing weather data for specific  days
+    Filling in missing weather data for specific days
     """
     missing_dates = set(nearby_weather["data"]) - set(target_weather.index)
     comune_near_importance_order = ["MEZZOLOMBARDO", "PERGINE VALSUGANA", "TRENTO"]
@@ -61,6 +111,5 @@ def define_regressor(training_data_T_E, features, target, pca_config: PCAConfig)
     print(f"Model Evaluation Metrics: r2_score: {r2},  root mean squared error: {rmse}, mean absolute error: {mae}")
  
     
-    
-    
+
     
