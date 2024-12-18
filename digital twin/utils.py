@@ -70,7 +70,35 @@ class Clustering:
         cluster_stats[cluster_name] = {'mean':mean, 'std':std}    
         return cluster_stats
 
+    def calculate_centroid_weights(self, centroids):
+        total = centroids["size"].sum()
+        weights = defaultdict(list)
+        for elem in centroids.itertuples():
+            weights["classes"].append(elem.Index)
+            weights["weights"].append(elem.size/total * 100)
+        return weights
         
+    def random_choices_clusters(self, sample_size, weighted_clusters):
+        # Step 1: Define the random size of each cluster
+        random_samples = random.choices(weighted_clusters["classes"], k=sample_size, weights=weighted_clusters["weights"])
+        return dict(Counter(random_samples))
+    
+    def random_generation_observations(self, cnt_samples, predictions, real_observations, feature_x, feature_y):
+        # Step 2: Randomly choose the predictions from each cluster based on the random sizes defined in Step 1
+        selected_observations = []
+        for cluster_name, cluster_size in cnt_samples.items():  
+            # get the indexes of each cluster from the real observations
+            cluster = np.where(predictions==cluster_name)[0]
+            # randomly pick the idexes from the random choices weights
+            random_indexes = random.sample(sorted(cluster), cluster_size)
+            selected_observations.extend(random_indexes)
+            random_obs = real_observations.iloc[random_indexes]
+            color = random.choice(list(mcolors.CSS4_COLORS.keys()))
+            plt.scatter(random_obs[feature_x], random_obs[feature_y], color=color)
+        plt.show()
+        return selected_observations
+
+
 def data_imputation_weather(nearby_weather, target_weather):
     """
     Filling in missing weather data for specific days
