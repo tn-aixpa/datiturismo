@@ -18,10 +18,10 @@ class Clustering:
     def __init__(self, training_ds):
         self._training_ds = training_ds
         
-    def apply_standardization(self, training_ds):
+    def apply_standardization(self):
         # Standardizing data
         scaler = StandardScaler()
-        scaled_data = scaler.fit_transform(training_ds)
+        scaled_data = scaler.fit_transform(self._training_ds)
         return scaler, scaled_data
     
     def fit_model(self, n_clusters):
@@ -34,13 +34,13 @@ class Clustering:
         print(centers.sort_values(by="size"))
         return scaler, kmeans, predictions
         
-    def plot_cv_clusters(self, training_ds, n_clusters, ax):
+    def plot_cv_clusters(self, n_clusters, ax):
         # fit the kmeans model
-        scaler, kmeans, predictions = fit_model(training_ds, n_clusters)
+        scaler, kmeans, predictions = fit_model(self._training_ds, n_clusters)
         # plot the data according to the obtained clusters    
         for cluster in range(n_clusters):
             color = random.choice(list(mcolors.CSS4_COLORS.keys()))
-            ax.scatter(training_ds.iloc[predictions==cluster, 0], training_ds.iloc[predictions==cluster, 1], label=cluster, color=color)
+            ax.scatter(self._training_ds.iloc[predictions==cluster, 0], self._training_ds.iloc[predictions==cluster, 1], label=cluster, color=color)
         # rescale centroids to their original unit
         rescaled_centroids = scaler.inverse_transform(kmeans.cluster_centers_)
         ax.scatter(rescaled_centroids[:, 0], rescaled_centroids[:, 1], s=250, marker='*', c='red', edgecolor='black', label='Centroids')
@@ -60,6 +60,15 @@ class Clustering:
         ax.plot(frame['Cluster'], frame['SSE'], marker='o')
         plt.xlabel('Number of clusters')
         plt.ylabel('Inertia')
+
+    def plot_cluster_timeseries(self, original_data, predictions, cluster_name, date_feature, y_feature):
+        original_data.iloc[predictions==cluster_name, :].plot(x=date_feature, y=y_feature)
+    
+    def compute_stats(self, cluster_data, cluster_name, feature):
+        cluster_stats = {}  
+        (mean, std) = (cluster_data.mean()[feature], cluster_data.std()[feature])
+        cluster_stats[cluster_name] = {'mean':mean, 'std':std}    
+        return cluster_stats
 
         
 def data_imputation_weather(nearby_weather, target_weather):
